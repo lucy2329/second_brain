@@ -70,8 +70,8 @@ export default function Home() {
             <Button size="lg" onClick={() => setIsQuickCaptureOpen(true)}>
               Try Quick Capture
             </Button>
-            <Button size="lg" variant="secondary" onClick={() => setIsModalOpen(true)}>
-              View Demo
+            <Button size="lg" variant="secondary" asChild>
+              <a href="/tasks">View Tasks</a>
             </Button>
           </div>
 
