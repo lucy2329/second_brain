@@ -19,7 +19,7 @@ interface Task {
   status: "BACKLOG" | "DOING" | "DONE";
   dueDate: string | null;
   tags: string[];
-  category: string | null;
+  category?: string | null;
   createdAt?: string;
   updatedAt?: string;
   position: number;
@@ -30,9 +30,11 @@ interface TaskModalProps {
   onClose: () => void;
   task?: Task | null;
   onSave: (task: Partial<Task>) => Promise<void>;
+  onDelete?: (taskId: string) => Promise<void>;
+  defaultStatus?: Task["status"];
 }
 
-export function TaskModal({ isOpen, onClose, task, onSave }: TaskModalProps) {
+export function TaskModal({ isOpen, onClose, task, onSave, onDelete, defaultStatus }: TaskModalProps) {
   const [formData, setFormData] = useState<Partial<Task>>({
     title: "",
     description: "",
@@ -57,13 +59,13 @@ export function TaskModal({ isOpen, onClose, task, onSave }: TaskModalProps) {
       setFormData({
         title: "",
         description: "",
-        status: "BACKLOG",
+        status: defaultStatus || "BACKLOG",
         dueDate: null,
         tags: [],
         category: "",
       });
     }
-  }, [task, isOpen]);
+  }, [task, isOpen, defaultStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,6 +174,22 @@ export function TaskModal({ isOpen, onClose, task, onSave }: TaskModalProps) {
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
+          {task && onDelete && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to delete this task?")) {
+                  setIsLoading(true);
+                  await onDelete(task.id);
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading}
+            >
+              Delete
+            </Button>
+          )}
           <Button type="submit" disabled={isLoading}>
             {isLoading ? "Saving..." : task ? "Update Task" : "Create Task"}
           </Button>

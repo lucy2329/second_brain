@@ -4,11 +4,12 @@ import { prisma } from '@/lib/db';
 // GET /api/notes/[id] - Get a single note
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const note = await prisma.note.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!note) {
@@ -31,14 +32,15 @@ export async function GET(
 // PATCH /api/notes/[id] - Update a note
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { title, content, paraType, tags, linkedNoteIds } = body;
 
     const note = await prisma.note.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(title && { title }),
         ...(content && { content }),
@@ -64,11 +66,12 @@ export async function PATCH(
 // DELETE /api/notes/[id] - Delete a note
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.note.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

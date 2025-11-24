@@ -67,7 +67,11 @@ export function TaskSidebar({
                 selectedCategory === category && "bg-secondary/50"
               )}
               onClick={() => {
-                onSelectCategory(category);
+                if (selectedCategory === category) {
+                  onSelectCategory(null);
+                } else {
+                  onSelectCategory(category);
+                }
                 if (showOverdue) onToggleOverdue();
               }}
             >

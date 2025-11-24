@@ -25,9 +25,10 @@ interface KanbanColumnProps {
   icon?: React.ReactNode;
   tasks: Task[];
   onTaskClick?: (task: Task) => void;
+  onAddClick?: (status: Task["status"]) => void;
 }
 
-export function KanbanColumn({ id, title, color, icon, tasks, onTaskClick }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, color, icon, tasks, onTaskClick, onAddClick }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({
     id: id,
     data: {
@@ -35,6 +36,15 @@ export function KanbanColumn({ id, title, color, icon, tasks, onTaskClick }: Kan
       column: { id, title, color },
     },
   });
+
+  const getBorderColors = (id: string) => {
+    switch (id) {
+      case "BACKLOG": return ["#ec4899", "#8b5cf6", "#6366f1", "#ec4899"]; // Pink -> Violet -> Indigo -> Pink
+      case "DOING": return ["#06b6d4", "#3b82f6", "#14b8a6", "#06b6d4"]; // Cyan -> Blue -> Teal -> Cyan
+      case "DONE": return ["#22c55e", "#10b981", "#84cc16", "#22c55e"]; // Green -> Emerald -> Lime -> Green
+      default: return ["#71717a", "#64748b", "#71717a"];
+    }
+  };
 
   const getGradient = (id: string) => {
     switch (id) {
@@ -45,63 +55,66 @@ export function KanbanColumn({ id, title, color, icon, tasks, onTaskClick }: Kan
     }
   };
 
-  const getBorderColor = (id: string) => {
+  const getIconColor = (id: string) => {
     switch (id) {
-      case "BACKLOG": return "group-hover:border-pink-500/50";
-      case "DOING": return "group-hover:border-cyan-500/50";
-      case "DONE": return "group-hover:border-green-500/50";
-      default: return "group-hover:border-foreground/50";
+      case "BACKLOG": return "text-pink-500";
+      case "DOING": return "text-cyan-500";
+      case "DONE": return "text-green-500";
+      default: return "text-foreground";
     }
   };
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* Minimal Header with Animated Border Bottom */}
-      <div className="group relative p-4 rounded-xl bg-secondary/5 border border-border/50 hover:bg-secondary/10 transition-all duration-300">
-        {/* Animated Border Gradient */}
-        <motion.div 
-          className={cn(
-            "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
-            "bg-gradient-to-r",
-            getGradient(id)
-          )}
+      {/* Header with Continuous Moving Border and Hover Effects */}
+      <div className="relative group rounded-xl p-[1px] overflow-hidden">
+        {/* Animated Gradient Border (Clockwise) */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            background: `conic-gradient(from 0deg, ${getBorderColors(id).join(", ")})`,
+          }}
           animate={{
-            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+            rotate: [0, 360],
           }}
           transition={{
-            duration: 5,
+            duration: 10,
             repeat: Infinity,
-            ease: "linear",
+            ease: "circInOut",
           }}
-          style={{ backgroundSize: "200% 200%" }}
         />
         
-        {/* Border Line Animation */}
-        <div className={cn(
-          "absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r transition-all duration-500 group-hover:w-full",
-          id === "BACKLOG" && "from-pink-500 to-indigo-500",
-          id === "DOING" && "from-cyan-500 to-blue-500",
-          id === "DONE" && "from-green-500 to-emerald-500"
-        )} />
+        {/* Inner Content with Solid Background and Hover Effects */}
+        <div className="relative bg-background/95 backdrop-blur-xl rounded-[11px] p-4 flex items-center justify-between overflow-hidden">
+          {/* Hover Background Gradient */}
+          <div 
+            className={cn(
+              "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
+              "bg-gradient-to-r",
+              getGradient(id)
+            )}
+          />
 
-        <div className="relative flex items-center justify-between z-10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 z-10">
             <div className={cn(
-              "p-2 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50",
-              id === "BACKLOG" && "text-pink-500",
-              id === "DOING" && "text-cyan-500",
-              id === "DONE" && "text-green-500"
+              "p-2 rounded-lg bg-secondary/50 border border-border/50",
+              getIconColor(id)
             )}>
               {icon}
             </div>
             <h3 className="font-semibold text-foreground/80 tracking-tight">{title}</h3>
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50">
+          <div className="flex items-center gap-2 z-10">
+            <span className="text-xs font-medium text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md border border-border/50">
               {tasks.length}
             </span>
-            <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-background/50">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 hover:bg-secondary/80"
+              onClick={() => onAddClick?.(id)}
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>

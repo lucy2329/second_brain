@@ -30,7 +30,9 @@ export function KanbanBoard() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showOverdue, setShowOverdue] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [defaultStatus, setDefaultStatus] = useState<Task["status"] | undefined>(undefined);
   
   // Use a ref to access the latest tasks state in event handlers
   const tasksRef = useRef(tasks);
@@ -88,8 +90,9 @@ export function KanbanBoard() {
 
   const categories = Array.from(new Set(tasks.map((t) => t.category).filter(Boolean))) as string[];
 
-  const handleCreateTask = () => {
+  const handleCreateTask = (status?: Task["status"]) => {
     setEditingTask(null);
+    setDefaultStatus(status);
     setIsModalOpen(true);
   };
 
@@ -123,6 +126,21 @@ export function KanbanBoard() {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error saving task:", error);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete task");
+
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error deleting task:", error);
     }
   };
 
@@ -252,7 +270,7 @@ export function KanbanBoard() {
         
         <div className="flex-1">
           <div className="flex justify-end mb-4">
-            <Button onClick={handleCreateTask}>
+            <Button onClick={() => handleCreateTask()}>
               <Plus className="h-4 w-4 mr-2" />
               New Task
             </Button>
@@ -268,6 +286,7 @@ export function KanbanBoard() {
                 icon={column.icon}
                 tasks={getTasksByStatus(column.id)}
                 onTaskClick={handleEditTask}
+                onAddClick={handleCreateTask}
               />
             ))}
           </div>
@@ -279,6 +298,8 @@ export function KanbanBoard() {
         onClose={() => setIsModalOpen(false)}
         task={editingTask}
         onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+        defaultStatus={defaultStatus}
       />
 
       <DragOverlay>
