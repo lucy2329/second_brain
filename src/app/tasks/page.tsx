@@ -24,10 +24,6 @@ export default function TasksPage() {
               </p>
             </div>
             
-            <Button size="lg">
-              <Plus className="h-5 w-5 mr-2" />
-              New Task
-            </Button>
           </div>
         </div>
 

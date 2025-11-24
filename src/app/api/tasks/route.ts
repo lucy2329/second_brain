@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/tasks - List all tasks
 export async function GET(request: NextRequest) {
   try {
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, status, dueDate, tags, linkedNoteId } = body;
+    const { title, description, status, dueDate, tags, category, linkedNoteId } = body;
 
     if (!title) {
       return NextResponse.json(
@@ -53,6 +55,7 @@ export async function POST(request: NextRequest) {
         status: status || 'BACKLOG',
         dueDate: dueDate ? new Date(dueDate) : null,
         tags: tags || [],
+        category,
         linkedNoteId,
         position: (maxPositionTask?.position || 0) + 1,
         // TODO: Add userId when auth is implemented

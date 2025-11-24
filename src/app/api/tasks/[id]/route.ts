@@ -4,25 +4,29 @@ import { prisma } from '@/lib/db';
 // PATCH /api/tasks/[id] - Update a task
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
-    const { title, description, status, dueDate, tags, linkedNoteId, position } = body;
+    console.log(`[PATCH] Updating task ${id} with body:`, body);
+    const { title, description, status, dueDate, tags, category, linkedNoteId, position } = body;
 
     const task = await prisma.task.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(title !== undefined && { title }),
         ...(description !== undefined && { description }),
         ...(status && { status }),
         ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
         ...(tags && { tags }),
+        ...(category !== undefined && { category }),
         ...(linkedNoteId !== undefined && { linkedNoteId }),
         ...(position !== undefined && { position }),
       },
     });
 
+    console.log(`[PATCH] Task ${id} updated successfully:`, task);
     return NextResponse.json(task);
   } catch (error) {
     console.error('Error updating task:', error);
@@ -36,11 +40,12 @@ export async function PATCH(
 // DELETE /api/tasks/[id] - Delete a task
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.task.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

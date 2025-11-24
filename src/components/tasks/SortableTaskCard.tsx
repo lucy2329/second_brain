@@ -11,13 +11,15 @@ interface Task {
   status: "BACKLOG" | "DOING" | "DONE";
   dueDate: string | null;
   tags: string[];
+  position: number;
 }
 
 interface SortableTaskCardProps {
   task: Task;
+  onClick?: () => void;
 }
 
-export function SortableTaskCard({ task }: SortableTaskCardProps) {
+export function SortableTaskCard({ task, onClick }: SortableTaskCardProps) {
   const {
     attributes,
     listeners,
@@ -25,7 +27,13 @@ export function SortableTaskCard({ task }: SortableTaskCardProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ 
+    id: task.id,
+    data: {
+      type: "Task",
+      task,
+    },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -34,7 +42,7 @@ export function SortableTaskCard({ task }: SortableTaskCardProps) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} isDragging={isDragging} />
+      <TaskCard task={task} isDragging={isDragging} onClick={onClick} />
     </div>
   );
 }

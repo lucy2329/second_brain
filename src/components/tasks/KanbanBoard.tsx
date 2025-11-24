@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useState, useEffect, useRef } from "react";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners, DragOverEvent, useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { TaskCard } from "./TaskCard";
-import { SortableTaskCard } from "./SortableTaskCard";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { KanbanColumn } from "./KanbanColumn";
+import { Circle, Timer, CheckCircle2, Plus } from "lucide-react";
+import { TaskModal } from "./TaskModal";
+import { TaskSidebar } from "./TaskSidebar";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -19,20 +18,44 @@ interface Task {
   dueDate: string | null;
   tags: string[];
   position: number;
+  category?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showOverdue, setShowOverdue] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  
+  // Use a ref to access the latest tasks state in event handlers
+  const tasksRef = useRef(tasks);
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const fetchTasks = async () => {
     try {
-      const response = await fetch("/api/tasks");
+      const response = await fetch("/api/tasks", { cache: "no-store" });
       if (!response.ok) throw new Error("Failed to fetch tasks");
       const data = await response.json();
       setTasks(data);
@@ -44,71 +67,160 @@ export function KanbanBoard() {
   };
 
   const columns = [
-    { id: "BACKLOG" as const, title: "Backlog", color: "border-foreground/20" },
-    { id: "DOING" as const, title: "Doing", color: "border-accent" },
-    { id: "DONE" as const, title: "Done", color: "border-success" },
+    { id: "BACKLOG" as const, title: "To-do", color: "border-foreground/20", icon: <Circle className="h-4 w-4" /> },
+    { id: "DOING" as const, title: "In Progress", color: "border-accent", icon: <Timer className="h-4 w-4" /> },
+    { id: "DONE" as const, title: "Done", color: "border-success", icon: <CheckCircle2 className="h-4 w-4" /> },
   ];
 
   const getTasksByStatus = (status: Task["status"]) => {
     return tasks
-      .filter((task) => task.status === status)
+      .filter((task) => {
+        if (task.status !== status) return false;
+        if (selectedCategory && task.category !== selectedCategory) return false;
+        if (showOverdue) {
+          const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "DONE";
+          if (!isOverdue) return false;
+        }
+        return true;
+      })
       .sort((a, b) => a.position - b.position);
+  };
+
+  const categories = Array.from(new Set(tasks.map((t) => t.category).filter(Boolean))) as string[];
+
+  const handleCreateTask = () => {
+    setEditingTask(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveTask = async (taskData: Partial<Task>) => {
+    try {
+      const url = editingTask ? `/api/tasks/${editingTask.id}` : "/api/tasks";
+      const method = editingTask ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskData),
+      });
+
+      if (!response.ok) throw new Error("Failed to save task");
+
+      const savedTask = await response.json();
+
+      setTasks((prev) => {
+        if (editingTask) {
+          return prev.map((t) => (t.id === savedTask.id ? savedTask : t));
+        }
+        return [...prev, savedTask];
+      });
+
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error saving task:", error);
+    }
   };
 
   const handleDragStart = (event: DragStartEvent) => {
     const task = tasks.find((t) => t.id === event.active.id);
-    setActiveTask(task || null);
+    // Create a shallow copy to avoid mutation issues
+    setActiveTask(task ? { ...task } : null);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveTask = active.data.current?.type === "Task";
+    const isOverTask = over.data.current?.type === "Task";
+
+    if (!isActiveTask) return;
+
+    // Dropping a Task over another Task
+    if (isActiveTask && isOverTask) {
+      setTasks((tasks) => {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        const overIndex = tasks.findIndex((t) => t.id === overId);
+
+        if (tasks[activeIndex].status !== tasks[overIndex].status) {
+          const updatedTasks = [...tasks];
+          // Create a new object for the updated task to avoid mutating the original reference
+          updatedTasks[activeIndex] = {
+            ...updatedTasks[activeIndex],
+            status: tasks[overIndex].status
+          };
+          return arrayMove(updatedTasks, activeIndex, overIndex);
+        }
+
+        return arrayMove(tasks, activeIndex, overIndex);
+      });
+    }
+
+    const isOverColumn = columns.some((col) => col.id === overId);
+
+    // Dropping a Task over a Column
+    if (isActiveTask && isOverColumn) {
+      setTasks((tasks) => {
+        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+        const updatedTasks = [...tasks];
+        // Create a new object for the updated task
+        updatedTasks[activeIndex] = {
+          ...updatedTasks[activeIndex],
+          status: overId as Task["status"]
+        };
+        return arrayMove(updatedTasks, activeIndex, activeIndex);
+      });
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    const originalTask = activeTask;
     setActiveTask(null);
 
-    if (!over) return;
+    if (!over || !originalTask) return;
 
-    const activeTask = tasks.find((t) => t.id === active.id);
-    if (!activeTask) return;
-
-    // Determine the new status based on which column was dropped into
-    let newStatus = activeTask.status;
+    // Determine new status
+    let newStatus = originalTask.status;
+    const overColumn = columns.find((col) => col.id === over.id);
     
-    // Check if dropped over a column container
-    const overColumn = columns.find((col) => over.id === col.id);
+    // Use the ref to get the latest state
+    const currentTasks = tasksRef.current;
+    
     if (overColumn) {
       newStatus = overColumn.id;
     } else {
-      // Dropped over another task - get that task's status
-      const overTask = tasks.find((t) => t.id === over.id);
+      const overTask = currentTasks.find((t) => t.id === over.id);
       if (overTask) {
         newStatus = overTask.status;
       }
     }
 
-    // If status changed or position changed
-    if (newStatus !== activeTask.status || active.id !== over.id) {
-      // Optimistically update UI
-      const updatedTasks = tasks.map((task) => {
-        if (task.id === activeTask.id) {
-          return { ...task, status: newStatus };
-        }
-        return task;
-      });
-      setTasks(updatedTasks);
-
-      // Update on server
+    // Update on server
+    if (newStatus !== originalTask.status) {
       try {
-        await fetch(`/api/tasks/${activeTask.id}`, {
+        const response = await fetch(`/api/tasks/${originalTask.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: newStatus }),
         });
-        
-        // Refetch to get correct positions
-        fetchTasks();
+
+        if (!response.ok) {
+          throw new Error("Failed to update task status");
+        }
       } catch (error) {
         console.error("Error updating task:", error);
-        // Revert on error
-        setTasks(tasks);
+        fetchTasks(); // Revert on error
       }
     }
   };
@@ -123,52 +235,51 @@ export function KanbanBoard() {
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {columns.map((column) => {
-          const columnTasks = getTasksByStatus(column.id);
-          
-          return (
-            <div key={column.id} className="flex flex-col gap-4">
-              <Card className={cn("border-t-4", column.color)}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{column.title}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-foreground/60">
-                        {columnTasks.length}
-                      </span>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
+      <div className="flex gap-6">
+        <TaskSidebar
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          showOverdue={showOverdue}
+          onToggleOverdue={() => setShowOverdue(!showOverdue)}
+        />
+        
+        <div className="flex-1">
+          <div className="flex justify-end mb-4">
+            <Button onClick={handleCreateTask}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Task
+            </Button>
+          </div>
 
-              <SortableContext
-                items={columnTasks.map((t) => t.id)}
-                strategy={verticalListSortingStrategy}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {columns.map((column) => (
+              <KanbanColumn
+                key={column.id}
                 id={column.id}
-              >
-                <div className="flex flex-col gap-3 min-h-[200px]">
-                  {columnTasks.map((task) => (
-                    <SortableTaskCard key={task.id} task={task} />
-                  ))}
-                  {columnTasks.length === 0 && (
-                    <div className="flex items-center justify-center h-32 border-2 border-dashed border-border rounded-lg text-foreground/40 text-sm">
-                      Drop tasks here
-                    </div>
-                  )}
-                </div>
-              </SortableContext>
-            </div>
-          );
-        })}
+                title={column.title}
+                color={column.color}
+                icon={column.icon}
+                tasks={getTasksByStatus(column.id)}
+                onTaskClick={handleEditTask}
+              />
+            ))}
+          </div>
+        </div>
       </div>
+
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        task={editingTask}
+        onSave={handleSaveTask}
+      />
 
       <DragOverlay>
         {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
