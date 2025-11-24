@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,9 +71,11 @@ export default function Home() {
             <Button size="lg" onClick={() => setIsQuickCaptureOpen(true)}>
               Try Quick Capture
             </Button>
-            <Button size="lg" variant="secondary" asChild>
-              <a href="/tasks">View Tasks</a>
-            </Button>
+            <Link href="/tasks">
+              <Button size="lg" variant="secondary">
+                View Tasks
+              </Button>
+            </Link>
           </div>
 
           {/* Features Grid */}
