@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
 
     const tasks = await prisma.task.findMany({
       where: {
-        // TODO: Add userId filter when auth is implemented
         ...(status && { status: status as any }),
       },
       orderBy: [

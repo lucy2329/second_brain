@@ -10,13 +10,11 @@ export async function GET(request: NextRequest) {
 
     const notes = await prisma.note.findMany({
       where: {
-        // TODO: Add userId filter when auth is implemented
         ...(paraType && { paraType: paraType as any }),
         ...(tags && tags.length > 0 && { tags: { hasSome: tags } }),
       },
       orderBy: {
-        updatedAt: 'desc',
-      },
+        updatedAt: 'desc' },
     });
 
     return NextResponse.json(notes);
