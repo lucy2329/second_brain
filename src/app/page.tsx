@@ -7,11 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { QuickCapture } from "@/components/capture/QuickCapture";
+import { QuickCaptureFAB } from "@/components/capture/QuickCaptureFAB";
 import { motion } from "framer-motion";
 import { Sparkles, Brain, Target, TrendingUp, CheckCircle2 } from "lucide-react";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
 
   const features = [
     {
@@ -64,11 +67,11 @@ export default function Home() {
           </p>
 
           <div className="flex gap-4 justify-center mb-16">
-            <Button size="lg" onClick={() => setIsModalOpen(true)}>
-              Try Demo
+            <Button size="lg" onClick={() => setIsQuickCaptureOpen(true)}>
+              Try Quick Capture
             </Button>
-            <Button size="lg" variant="secondary">
-              Learn More
+            <Button size="lg" variant="secondary" onClick={() => setIsModalOpen(true)}>
+              View Demo
             </Button>
           </div>
 
@@ -103,12 +106,21 @@ export default function Home() {
         </motion.div>
       </div>
 
+      {/* Quick Capture FAB */}
+      <QuickCaptureFAB onClick={() => setIsQuickCaptureOpen(true)} />
+
+      {/* Quick Capture Modal */}
+      <QuickCapture
+        isOpen={isQuickCaptureOpen}
+        onClose={() => setIsQuickCaptureOpen(false)}
+      />
+
       {/* Demo Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Quick Capture Demo"
-        description="Try out the quick capture interface"
+        title="Component Demo"
+        description="Try out the UI components"
       >
         <div className="space-y-4">
           <Input label="Title" placeholder="Enter a title..." />
