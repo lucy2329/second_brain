@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  notes        Note[]
+  tasks        Task[]
+  habits       Habit[]
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+model Note {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  title           String
+  content         String   @db.Text
+  paraType        ParaType @map("para_type")
+  tags            String[]
+  linkedNoteIds   String[] @map("linked_note_ids")
+  embedding       Unsupported("vector(1536)")?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([paraType])
+  @@index([tags])
+  @@map("notes")
+}
+
+enum ParaType {
+  PROJECT
+  AREA
+  RESOURCE
+  ARCHIVE
+}
+
+model Task {
+  id            String     @id @default(uuid())
+  userId        String     @map("user_id")
+  title         String
+  description   String?    @db.Text
+  status        TaskStatus @default(BACKLOG)
+  dueDate       DateTime?  @map("due_date")
+  tags          String[]
+  linkedNoteId  String?    @map("linked_note_id")
+  position      Int        @default(0)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  BACKLOG
+  DOING
+  DONE
+}
+
+model Habit {
+  id        String          @id @default(uuid())
+  userId    String          @map("user_id")
+  name      String
+  frequency HabitFrequency  @default(DAILY)
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs HabitLog[]
+
+  @@index([userId])
+  @@map("habits")
+}
+
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+}
+
+model HabitLog {
+  id          String   @id @default(uuid())
+  habitId     String   @map("habit_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+  date        DateTime @db.Date
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@index([habitId])
+  @@index([date])
+  @@map("habit_logs")
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  userId      String            @map("user_id")
+  type        TransactionType
+  amount      Decimal           @db.Decimal(10, 2)
+  category    String
+  description String?           @db.Text
+  tags        String[]
+  receiptUrl  String?           @map("receipt_url")
+  date        DateTime          @db.Date
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([category])
+  @@index([date])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
