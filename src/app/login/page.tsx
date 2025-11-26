@@ -72,14 +72,14 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 w-full max-w-md"
+        className="relative z-10 w-full max-w-md px-4"
       >
         <Card className="border-border/50 bg-background/50 backdrop-blur-xl shadow-xl">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center px-4 md:px-6">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+            <CardTitle className="text-xl md:text-2xl font-bold">Welcome Back</CardTitle>
             <CardDescription>
               Sign in to your Second Brain to continue
             </CardDescription>

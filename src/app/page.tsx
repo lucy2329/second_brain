@@ -79,7 +79,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
       {/* Grid Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:linear-gradient(to_bottom,black,transparent)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:64px_64px] md:bg-[size:64px_64px] [mask-image:linear-gradient(to_bottom,black,transparent)] pointer-events-none" />
       
       {/* Glowing Artifacts */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
@@ -128,12 +128,12 @@ export default function Home() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="fixed top-6 right-6 z-50"
+        className="fixed top-4 right-4 md:top-6 md:right-6 z-50"
       >
         {user ? (
           <div className="relative">
             <div 
-              className="flex items-center gap-3 px-2 py-2 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+              className="flex items-center gap-3 px-2 py-2 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:shadow-md transition-all cursor-pointer group touch-manipulation"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
               <Image 
@@ -172,7 +172,7 @@ export default function Home() {
           </div>
         ) : (
           <Link href="/login">
-            <div className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:shadow-md hover:bg-accent/10 transition-all cursor-pointer group">
+            <div className="flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:shadow-md hover:bg-accent/10 transition-all cursor-pointer group touch-manipulation">
               <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground">Login</span>
             </div>
           </Link>
@@ -180,32 +180,32 @@ export default function Home() {
       </motion.div>
 
       {/* Hero Section */}
-      <div className="flex min-h-screen flex-col items-center justify-center p-8 relative z-10">
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center max-w-4xl"
+          className="text-center max-w-4xl px-4"
         >
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 border border-primary/20">
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">Now in Development</span>
           </div>
 
-          <h1 className="text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
             Second Brain
           </h1>
 
-          <p className="text-xl text-foreground/80 mb-12 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg lg:text-xl text-foreground/80 mb-8 md:mb-12 max-w-2xl mx-auto">
             Your unified personal knowledge and productivity system. Capture ideas, manage tasks, track habits, and monitor finances—all in one beautiful place.
           </p>
 
-          <div className="flex gap-4 justify-center mb-16">
-            <Button size="lg" onClick={() => setIsQuickCaptureOpen(true)}>
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-12 md:mb-16 w-full sm:w-auto px-4 sm:px-0">
+            <Button size="lg" onClick={() => setIsQuickCaptureOpen(true)} className="w-full sm:w-auto">
               Try Quick Capture
             </Button>
-            <Link href="/tasks">
-              <Button size="lg" variant="secondary">
+            <Link href="/tasks" className="w-full sm:w-auto">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
                 View Tasks
               </Button>
             </Link>
@@ -244,7 +244,7 @@ export default function Home() {
           </div>
 
           {/* Tech Stack Badges */}
-          <div className="mt-12 flex flex-wrap gap-2 justify-center">
+          <div className="mt-8 md:mt-12 flex flex-wrap gap-2 justify-center px-4">
             <Badge variant="primary">Next.js 15</Badge>
             <Badge variant="primary">TypeScript</Badge>
             <Badge variant="primary">Tailwind CSS</Badge>

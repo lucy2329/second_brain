@@ -128,31 +128,32 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
-              className="relative w-full max-w-2xl rounded-2xl border border-border bg-background shadow-2xl"
+              className="relative w-full max-w-2xl h-full md:h-auto md:rounded-2xl border border-border bg-background shadow-2xl"
             >
               {/* Header */}
-              <div className="border-b border-border px-6 py-4">
+              <div className="border-b border-border px-4 md:px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Plus className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-semibold">Quick Capture</h2>
+                    <h2 className="text-lg md:text-xl font-semibold">Quick Capture</h2>
                   </div>
                   <button
                     onClick={handleClose}
-                    className="rounded-lg p-1 text-foreground/60 hover:bg-secondary hover:text-foreground transition-colors"
+                    className="rounded-lg p-2 text-foreground/60 hover:bg-secondary hover:text-foreground transition-colors touch-manipulation"
+                    aria-label="Close"
                   >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
                 {/* Tabs */}
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -184,7 +185,7 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
               </div>
 
               {/* Content */}
-              <div className="px-6 py-6">
+              <div className="px-4 md:px-6 py-6 overflow-y-auto max-h-[calc(100vh-250px)] md:max-h-[calc(100vh-300px)]">
                 <AnimatePresence mode="wait">
                   {activeTab === "note" && (
                     <motion.div
@@ -298,7 +299,7 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
               </div>
 
               {/* Footer */}
-              <div className="border-t border-border px-6 py-4 flex gap-3 justify-end">
+              <div className="border-t border-border px-4 md:px-6 py-4 flex gap-3 justify-end">
                 <Button variant="ghost" onClick={handleClose}>
                   Cancel
                 </Button>

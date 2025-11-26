@@ -20,7 +20,7 @@ export function TaskSidebar({
   onToggleOverdue,
 }: TaskSidebarProps) {
   return (
-    <div className="w-64 flex flex-col gap-6 pr-6 border-r border-border/50">
+    <div className="hidden md:flex w-64 flex-col gap-6 pr-6 border-r border-border/50">
       <div>
         <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">Filters</h3>
         <div className="space-y-1">

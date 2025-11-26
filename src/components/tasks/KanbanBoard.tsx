@@ -259,7 +259,7 @@ export function KanbanBoard() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         <TaskSidebar
           categories={categories}
           selectedCategory={selectedCategory}
@@ -270,13 +270,13 @@ export function KanbanBoard() {
         
         <div className="flex-1">
           <div className="flex justify-end mb-4">
-            <Button onClick={() => handleCreateTask()}>
+            <Button onClick={() => handleCreateTask()} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               New Task
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {columns.map((column) => (
               <KanbanColumn
                 key={column.id}

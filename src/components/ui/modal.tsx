@@ -59,30 +59,32 @@ const Modal: React.FC<ModalProps> = ({
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
               className={cn(
-                "relative w-full rounded-2xl border border-border bg-background shadow-2xl",
+                "relative w-full border border-border bg-background shadow-2xl",
+                "h-full md:h-auto md:rounded-2xl", // Full-screen on mobile, rounded on desktop
                 sizes[size]
               )}
             >
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute right-4 top-4 rounded-lg p-1 text-foreground/60 hover:bg-secondary hover:text-foreground transition-colors"
+                className="absolute right-4 top-4 z-10 rounded-lg p-2 text-foreground/60 hover:bg-secondary hover:text-foreground transition-colors touch-manipulation"
+                aria-label="Close modal"
               >
                 <X className="h-5 w-5" />
               </button>
 
               {/* Header */}
               {(title || description) && (
-                <div className="border-b border-border px-6 py-4">
+                <div className="border-b border-border px-4 md:px-6 py-4 md:py-5">
                   {title && (
-                    <h2 className="text-xl font-semibold">{title}</h2>
+                    <h2 className="text-lg md:text-xl font-semibold pr-8">{title}</h2>
                   )}
                   {description && (
                     <p className="mt-1 text-sm text-foreground/60">
@@ -93,7 +95,9 @@ const Modal: React.FC<ModalProps> = ({
               )}
 
               {/* Content */}
-              <div className="px-6 py-4">{children}</div>
+              <div className="px-4 md:px-6 py-4 overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-300px)]">
+                {children}
+              </div>
             </motion.div>
           </div>
         </>
