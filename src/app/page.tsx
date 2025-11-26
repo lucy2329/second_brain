@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { createBrowserClient } from "@supabase/ssr";
+import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,11 +14,40 @@ import { Modal } from "@/components/ui/modal";
 import { QuickCapture } from "@/components/capture/QuickCapture";
 import { QuickCaptureFAB } from "@/components/capture/QuickCaptureFAB";
 import { motion } from "framer-motion";
-import { Sparkles, Brain, Target, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Settings, LogOut, Sparkles, Brain, Target, TrendingUp, CheckCircle2 } from "lucide-react";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        console.log("Logged in user:", user);
+        setUser(user);
+      }
+    };
+
+    getUser();
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    await supabase.auth.signOut();
+    setUser(null);
+    setIsDropdownOpen(false);
+  };
 
   const features = [
     {
@@ -90,6 +122,62 @@ export default function Home() {
           className="absolute -bottom-[20%] left-[20%] w-[60%] h-[60%] rounded-full bg-primary/20 blur-[100px]" 
         />
       </div>
+
+      {/* Floating Login/Profile Button */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="fixed top-6 right-6 z-50"
+      >
+        {user ? (
+          <div className="relative">
+            <div 
+              className="flex items-center gap-3 px-2 py-2 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              <Image 
+                src={user.user_metadata.avatar_url || user.user_metadata.picture} 
+                alt={user.user_metadata.full_name || "User"} 
+                width={32}
+                height={32}
+                className="rounded-full border border-border"
+              />
+            </div>
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="absolute right-0 mt-2 w-48 rounded-xl bg-background/80 backdrop-blur-xl border border-border/50 shadow-xl overflow-hidden"
+              >
+                <div className="p-1">
+                  <button className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/10 rounded-lg transition-colors">
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </button>
+                  <button 
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Log out
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        ) : (
+          <Link href="/login">
+            <div className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:shadow-md hover:bg-accent/10 transition-all cursor-pointer group">
+              <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground">Login</span>
+            </div>
+          </Link>
+        )}
+      </motion.div>
 
       {/* Hero Section */}
       <div className="flex min-h-screen flex-col items-center justify-center p-8 relative z-10">

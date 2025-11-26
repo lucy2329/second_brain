@@ -16,6 +16,7 @@
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-popover": "^1.1.15",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.84.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

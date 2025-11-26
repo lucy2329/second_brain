@@ -1,9 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { QuickCaptureFAB } from "@/components/capture/QuickCaptureFAB";
+import { QuickCapture } from "@/components/capture/QuickCapture";
 
 export default function TasksPage() {
+  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 p-8">
       <div className="max-w-7xl mx-auto">
@@ -30,6 +37,12 @@ export default function TasksPage() {
         {/* Kanban Board */}
         <KanbanBoard />
       </div>
+
+      {/* Quick Capture FAB */}
+      <QuickCaptureFAB onClick={() => setIsQuickCaptureOpen(true)} />
+
+      {/* Quick Capture Modal */}
+      <QuickCapture isOpen={isQuickCaptureOpen} onClose={() => setIsQuickCaptureOpen(false)} />
     </div>
   );
 }
