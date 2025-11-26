@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getAuthenticatedUser, AuthenticationError } from '@/lib/auth';
 
 // GET /api/notes - List all notes
 export async function GET(request: NextRequest) {
   try {
+    const userId = await getAuthenticatedUser();
     const searchParams = request.nextUrl.searchParams;
     const paraType = searchParams.get('paraType');
     const tags = searchParams.get('tags')?.split(',').filter(Boolean);
 
     const notes = await prisma.note.findMany({
       where: {
+        userId,
         ...(paraType && { paraType: paraType as any }),
         ...(tags && tags.length > 0 && { tags: { hasSome: tags } }),
       },
@@ -19,6 +22,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(notes);
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error fetching notes:', error);
     return NextResponse.json(
       { error: 'Failed to fetch notes' },
@@ -30,6 +39,7 @@ export async function GET(request: NextRequest) {
 // POST /api/notes - Create a new note
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getAuthenticatedUser();
     const body = await request.json();
     const { title, content, paraType, tags, linkedNoteIds } = body;
 
@@ -48,8 +58,7 @@ export async function POST(request: NextRequest) {
         paraType: paraType || 'RESOURCE',
         tags: tags || [],
         linkedNoteIds: linkedNoteIds || [],
-        // TODO: Add userId when auth is implemented
-        userId: 'temp-user-id', // Temporary placeholder
+        userId,
       },
     });
 
@@ -58,6 +67,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error creating note:', error);
     return NextResponse.json(
       { error: 'Failed to create note' },

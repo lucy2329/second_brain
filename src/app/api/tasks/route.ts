@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getAuthenticatedUser, AuthenticationError } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/tasks - List all tasks
 export async function GET(request: NextRequest) {
   try {
+    const userId = await getAuthenticatedUser();
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
 
     const tasks = await prisma.task.findMany({
       where: {
+        userId,
         ...(status && { status: status as any }),
       },
       orderBy: [
@@ -21,6 +24,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(tasks);
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error fetching tasks:', error);
     return NextResponse.json(
       { error: 'Failed to fetch tasks' },
@@ -32,6 +41,7 @@ export async function GET(request: NextRequest) {
 // POST /api/tasks - Create a new task
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getAuthenticatedUser();
     const body = await request.json();
     const { title, description, status, dueDate, tags, category, linkedNoteId } = body;
 
@@ -42,9 +52,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the max position for the status column
+    // Get the max position for the status column (scoped to user)
     const maxPositionTask = await prisma.task.findFirst({
-      where: { status: status || 'BACKLOG' },
+      where: { 
+        userId,
+        status: status || 'BACKLOG' 
+      },
       orderBy: { position: 'desc' },
     });
 
@@ -58,13 +71,18 @@ export async function POST(request: NextRequest) {
         category,
         linkedNoteId,
         position: (maxPositionTask?.position || 0) + 1,
-        // TODO: Add userId when auth is implemented
-        userId: 'temp-user-id',
+        userId,
       },
     });
 
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error creating task:', error);
     return NextResponse.json(
       { error: 'Failed to create task' },

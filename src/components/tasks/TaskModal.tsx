@@ -179,11 +179,9 @@ export function TaskModal({ isOpen, onClose, task, onSave, onDelete, defaultStat
               type="button"
               variant="destructive"
               onClick={async () => {
-                if (window.confirm("Are you sure you want to delete this task?")) {
-                  setIsLoading(true);
-                  await onDelete(task.id);
-                  setIsLoading(false);
-                }
+                setIsLoading(true);
+                await onDelete(task.id);
+                setIsLoading(false);
               }}
               disabled={isLoading}
             >

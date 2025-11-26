@@ -14,9 +14,10 @@ type CaptureType = "note" | "task" | "expense" | "habit";
 interface QuickCaptureProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void; // Callback to trigger refresh after successful creation
 }
 
-export function QuickCapture({ isOpen, onClose }: QuickCaptureProps) {
+export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) {
   const [activeTab, setActiveTab] = useState<CaptureType>("note");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -80,6 +81,7 @@ export function QuickCapture({ isOpen, onClose }: QuickCaptureProps) {
         
         resetForm();
         onClose();
+        onSuccess?.(); // Trigger refresh in parent component
       } else if (activeTab === "task") {
         if (!taskTitle) {
           alert("Please enter a task title");
@@ -101,6 +103,7 @@ export function QuickCapture({ isOpen, onClose }: QuickCaptureProps) {
         
         resetForm();
         onClose();
+        onSuccess?.(); // Trigger refresh in parent component
       }
       // TODO: Implement expense and habit capture
     } catch (error) {
