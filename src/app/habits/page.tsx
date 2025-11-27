@@ -140,7 +140,7 @@ export default function HabitsPage() {
 
       await fetchHabits();
     } catch (error) {
-      console.error("Error checking in:", error);
+      console.log("Error checking in:", error);
       throw error;
     }
   };
