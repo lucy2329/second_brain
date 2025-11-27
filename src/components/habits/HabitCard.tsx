@@ -51,7 +51,6 @@ export function HabitCard({ habit, onCheckIn, onEdit, onDelete }: HabitCardProps
       
       showToast("Great job! Habit checked in! 🎉", "success");
     } catch (error: any) {
-      console.error("Failed to check in:", error);
       const errorMessage = error?.message || "Failed to check in. Please try again.";
       showToast(errorMessage, "error");
     } finally {
