@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, StickyNote, CheckSquare, DollarSign, Target } from "lucide-react";
+import { X, Plus, StickyNote, CheckSquare, DollarSign, Target, TrendingUp, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
 
 type CaptureType = "note" | "task" | "expense" | "habit";
 
@@ -20,6 +21,7 @@ interface QuickCaptureProps {
 export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) {
   const [activeTab, setActiveTab] = useState<CaptureType>("note");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showToast } = useToast();
 
   // Note state
   const [noteTitle, setNoteTitle] = useState("");
@@ -28,6 +30,10 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
   // Task state
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
+
+  // Habit state
+  const [habitName, setHabitName] = useState("");
+  const [habitFrequency, setHabitFrequency] = useState<"DAILY" | "WEEKLY">("DAILY");
 
   // Expense state
   const [expenseAmount, setExpenseAmount] = useState("");
@@ -46,6 +52,8 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
     setNoteContent("");
     setTaskTitle("");
     setTaskDescription("");
+    setHabitName("");
+    setHabitFrequency("DAILY");
     setExpenseAmount("");
     setExpenseCategory("");
     setExpenseDescription("");
@@ -81,7 +89,8 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
         
         resetForm();
         onClose();
-        onSuccess?.(); // Trigger refresh in parent component
+        onSuccess?.();
+        showToast("Note created successfully! 📝", "success");
       } else if (activeTab === "task") {
         if (!taskTitle) {
           alert("Please enter a task title");
@@ -103,12 +112,35 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
         
         resetForm();
         onClose();
+        onSuccess?.();
+        showToast("Task created successfully! ✅", "success");
+      } else if (activeTab === "habit") {
+        if (!habitName) {
+          alert("Please enter a habit name");
+          return;
+        }
+
+        const response = await fetch("/api/habits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: habitName,
+            frequency: habitFrequency,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to create habit");
+        
+        resetForm();
+        onClose();
         onSuccess?.(); // Trigger refresh in parent component
+        showToast("Habit created successfully! 🎯", "success");
       }
       // TODO: Implement expense and habit capture
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting:", error);
-      alert("Failed to save. Please try again.");
+      const errorMessage = error?.message || "Failed to save. Please try again.";
+      showToast(errorMessage, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -290,9 +322,27 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
                       transition={{ duration: 0.2 }}
                       className="space-y-4"
                     >
-                      <p className="text-center text-foreground/60 py-8">
-                        Habit tracking coming soon!
-                      </p>
+                      <Input
+                        label="Habit Name"
+                        placeholder="e.g., Morning Exercise, Read for 30 min"
+                        value={habitName}
+                        onChange={(e) => setHabitName(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-foreground/80">Frequency</label>
+                        <select
+                          className="flex h-11 md:h-10 w-full rounded-lg border border-border bg-background/50 px-3 py-2 text-base md:text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 touch-manipulation"
+                          value={habitFrequency}
+                          onChange={(e) => setHabitFrequency(e.target.value as "DAILY" | "WEEKLY")}
+                        >
+                          <option value="DAILY">Daily</option>
+                          <option value="WEEKLY">Weekly</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant="primary">New Habit</Badge>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -306,9 +356,9 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
                 <Button
                   onClick={handleSubmit}
                   isLoading={isSubmitting}
-                  disabled={isSubmitting || (activeTab === "expense") || (activeTab === "habit")}
+                  disabled={isSubmitting || activeTab === "expense"}
                 >
-                  {activeTab === "expense" || activeTab === "habit" ? "Coming Soon" : "Save"}
+                  {activeTab === "expense" ? "Coming Soon" : "Save"}
                 </Button>
               </div>
             </motion.div>

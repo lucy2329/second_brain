@@ -9,6 +9,7 @@ import { Circle, Timer, CheckCircle2, Plus } from "lucide-react";
 import { TaskModal } from "./TaskModal";
 import { TaskSidebar } from "./TaskSidebar";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 
 interface Task {
   id: string;
@@ -33,6 +34,7 @@ export function KanbanBoard() {
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<Task["status"] | undefined>(undefined);
+  const { showToast } = useToast();
   
   // Use a ref to access the latest tasks state in event handlers
   const tasksRef = useRef(tasks);
@@ -61,9 +63,10 @@ export function KanbanBoard() {
       if (!response.ok) throw new Error("Failed to fetch tasks");
       const data = await response.json();
       setTasks(data);
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching tasks:", error);
-    } finally {
+      showToast("Failed to load tasks. Please refresh the page.", "error");
       setIsLoading(false);
     }
   };
@@ -124,8 +127,10 @@ export function KanbanBoard() {
       });
 
       setIsModalOpen(false);
+      showToast("Task saved successfully!", "success");
     } catch (error) {
       console.error("Error saving task:", error);
+      showToast("Failed to save task. Please try again.", "error");
     }
   };
 
@@ -137,10 +142,12 @@ export function KanbanBoard() {
 
       if (!response.ok) throw new Error("Failed to delete task");
 
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      await fetchTasks();
       setIsModalOpen(false);
+      showToast("Task deleted successfully.", "success");
     } catch (error) {
       console.error("Error deleting task:", error);
+      showToast("Failed to delete task. Please try again.", "error");
     }
   };
 
@@ -236,8 +243,10 @@ export function KanbanBoard() {
         if (!response.ok) {
           throw new Error("Failed to update task status");
         }
+        showToast("Task moved successfully!", "success");
       } catch (error) {
         console.error("Error updating task:", error);
+        showToast("Failed to move task. Please try again.", "error");
         fetchTasks(); // Revert on error
       }
     }

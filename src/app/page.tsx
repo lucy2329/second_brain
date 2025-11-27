@@ -220,8 +220,8 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
-                {feature.title === "Kanban Tasks" ? (
-                  <Link href="/tasks" className="cursor-pointer">
+                {feature.title === "Kanban Tasks" || feature.title === "Habit Tracker" ? (
+                  <Link href={feature.title === "Kanban Tasks" ? "/tasks" : "/habits"} className="cursor-pointer">
                     <Card hover>
                       <CardHeader>
                         <feature.icon className={`h-8 w-8 mb-2 ${feature.color}`} />
