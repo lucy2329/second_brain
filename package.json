@@ -29,6 +29,7 @@
     "react-day-picker": "^9.11.2",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.66.1",
+    "snaptrade-typescript-sdk": "^9.0.158",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.1.13"
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,20 @@ export default function HabitsPage() {
   const router = useRouter();
   const { showToast } = useToast();
 
+  const fetchHabits = useCallback(async () => {
+    try {
+      const response = await fetch("/api/habits", { cache: "no-store" });
+      if (!response.ok) throw new Error("Failed to fetch habits");
+      const data = await response.json();
+      setHabits(data);
+    } catch (error) {
+      console.error("Error fetching habits:", error);
+      showToast("Failed to load habits. Please refresh the page.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showToast]);
+
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createBrowserClient(
@@ -54,21 +68,7 @@ export default function HabitsPage() {
     };
 
     checkAuth();
-  }, [router]);
-
-  const fetchHabits = async () => {
-    try {
-      const response = await fetch("/api/habits", { cache: "no-store" });
-      if (!response.ok) throw new Error("Failed to fetch habits");
-      const data = await response.json();
-      setHabits(data);
-    } catch (error) {
-      console.error("Error fetching habits:", error);
-      showToast("Failed to load habits. Please refresh the page.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [router, fetchHabits]);
 
   const handleCreateHabit = () => {
     setEditingHabit(null);

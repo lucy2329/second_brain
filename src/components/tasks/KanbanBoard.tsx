@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners, DragOverEvent, useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { TaskCard } from "./TaskCard";
@@ -42,9 +42,23 @@ export function KanbanBoard() {
     tasksRef.current = tasks;
   }, [tasks]);
 
+  const fetchTasks = useCallback(async () => {
+    try {
+      const response = await fetch("/api/tasks", { cache: "no-store" });
+      if (!response.ok) throw new Error("Failed to fetch tasks");
+      const data = await response.json();
+      setTasks(data);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      showToast("Failed to load tasks. Please refresh the page.", "error");
+      setIsLoading(false);
+    }
+  }, [showToast]);
+
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -57,19 +71,6 @@ export function KanbanBoard() {
     })
   );
 
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch("/api/tasks", { cache: "no-store" });
-      if (!response.ok) throw new Error("Failed to fetch tasks");
-      const data = await response.json();
-      setTasks(data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      showToast("Failed to load tasks. Please refresh the page.", "error");
-      setIsLoading(false);
-    }
-  };
 
   const columns = [
     { id: "BACKLOG" as const, title: "To-do", color: "border-foreground/20", icon: <Circle className="h-4 w-4" /> },

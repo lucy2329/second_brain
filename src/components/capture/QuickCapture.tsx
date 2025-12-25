@@ -38,7 +38,9 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
   // Expense state
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseCategory, setExpenseCategory] = useState("");
+  const [expenseMerchant, setExpenseMerchant] = useState("");
   const [expenseDescription, setExpenseDescription] = useState("");
+  const [expenseType, setExpenseType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
 
   const tabs = [
     { id: "note" as const, label: "Note", icon: StickyNote, color: "text-primary" },
@@ -56,7 +58,9 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
     setHabitFrequency("DAILY");
     setExpenseAmount("");
     setExpenseCategory("");
+    setExpenseMerchant("");
     setExpenseDescription("");
+    setExpenseType("EXPENSE");
   };
 
   const handleClose = () => {
@@ -133,10 +137,39 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
         
         resetForm();
         onClose();
-        onSuccess?.(); // Trigger refresh in parent component
+        onSuccess?.();
         showToast("Habit created successfully! 🎯", "success");
+      } else if (activeTab === "expense") {
+        if (!expenseAmount) {
+          alert("Please enter an amount");
+          return;
+        }
+
+        const response = await fetch("/api/transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: expenseType,
+            amount: parseFloat(expenseAmount),
+            category: expenseCategory || null,
+            merchant: expenseMerchant || null,
+            description: expenseDescription || null,
+            date: new Date().toISOString(),
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to create transaction");
+        
+        resetForm();
+        onClose();
+        onSuccess?.();
+        showToast(
+          expenseType === "EXPENSE" 
+            ? "Expense added! 💸" 
+            : "Income added! 💰", 
+          "success"
+        );
       }
-      // TODO: Implement expense and habit capture
     } catch (error: any) {
       console.error("Error submitting:", error);
       const errorMessage = error?.message || "Failed to save. Please try again.";
@@ -286,30 +319,82 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
                       transition={{ duration: 0.2 }}
                       className="space-y-4"
                     >
+                      {/* Type Toggle */}
+                      <div className="flex rounded-lg border border-border overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setExpenseType("EXPENSE")}
+                          className={cn(
+                            "flex-1 py-2 text-sm font-medium transition-all",
+                            expenseType === "EXPENSE"
+                              ? "bg-destructive/10 text-destructive"
+                              : "hover:bg-secondary/50"
+                          )}
+                        >
+                          Expense
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExpenseType("INCOME")}
+                          className={cn(
+                            "flex-1 py-2 text-sm font-medium transition-all",
+                            expenseType === "INCOME"
+                              ? "bg-success/10 text-success"
+                              : "hover:bg-secondary/50"
+                          )}
+                        >
+                          Income
+                        </button>
+                      </div>
+
+                      {/* Amount */}
+                      <div>
+                        <label className="block text-sm font-medium text-foreground/80 mb-2">
+                          Amount
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/60">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={expenseAmount}
+                            onChange={(e) => setExpenseAmount(e.target.value)}
+                            className="w-full pl-7 pr-4 py-2.5 rounded-lg border border-border bg-background/50 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary tabular-nums"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+
                       <Input
-                        label="Amount"
-                        type="number"
-                        placeholder="0.00"
-                        value={expenseAmount}
-                        onChange={(e) => setExpenseAmount(e.target.value)}
-                        autoFocus
+                        label={expenseType === "EXPENSE" ? "Merchant / Store" : "Source"}
+                        placeholder={expenseType === "EXPENSE" ? "e.g., Starbucks, Amazon" : "e.g., Salary, Freelance"}
+                        value={expenseMerchant}
+                        onChange={(e) => setExpenseMerchant(e.target.value)}
                       />
+
                       <Input
-                        label="Category"
+                        label="Category (optional)"
                         placeholder="e.g., Food, Transport, Entertainment"
                         value={expenseCategory}
                         onChange={(e) => setExpenseCategory(e.target.value)}
                       />
+
                       <Textarea
-                        label="Description (optional)"
-                        placeholder="What was this for?"
-                        rows={3}
+                        label="Notes (optional)"
+                        placeholder="Add any details..."
+                        rows={2}
                         value={expenseDescription}
                         onChange={(e) => setExpenseDescription(e.target.value)}
                       />
-                      <p className="text-sm text-foreground/60">
-                        Coming soon: Full expense tracking
-                      </p>
+
+                      <div className="flex gap-2">
+                        <Badge variant={expenseType === "EXPENSE" ? "destructive" : "success"}>
+                          {expenseType === "EXPENSE" ? "Expense" : "Income"}
+                        </Badge>
+                      </div>
                     </motion.div>
                   )}
 
@@ -356,9 +441,9 @@ export function QuickCapture({ isOpen, onClose, onSuccess }: QuickCaptureProps) 
                 <Button
                   onClick={handleSubmit}
                   isLoading={isSubmitting}
-                  disabled={isSubmitting || activeTab === "expense"}
+                  disabled={isSubmitting}
                 >
-                  {activeTab === "expense" ? "Coming Soon" : "Save"}
+                  Save
                 </Button>
               </div>
             </motion.div>
