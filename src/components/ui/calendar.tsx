@@ -2,58 +2,179 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import "react-day-picker/dist/style.css"
-import { DayPicker } from "react-day-picker"
-import { enGB } from "date-fns/locale"
+import { 
+  addMonths, 
+  subMonths, 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek, 
+  isSameMonth, 
+  isSameDay, 
+  eachDayOfInterval,
+  isToday
+} from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+/**
+ * Calendar Component
+ * A custom-built date picker component written from scratch.
+ * Replaces the react-day-picker implementation to avoid alignment and styling issues.
+ */
 
-function Calendar({
+export interface CalendarProps {
+  /** The currently selected date */
+  selected?: Date | null
+  /** Callback when a date is selected */
+  onSelect?: (date: Date | null) => void
+  /** Optional additional class names */
+  className?: string
+  /** 
+   * Compatibility props for Shadcn-like usage.
+   * Note: This implementation currently focuses on 'single' mode.
+   */
+  mode?: "single" | "range" | "multiple"
+  initialFocus?: boolean
+  showOutsideDays?: boolean
+}
+
+export function Calendar({
+  selected,
+  onSelect,
   className,
-  classNames,
   showOutsideDays = true,
-  ...props
+  // These are accepted but currently ignored in this simplified implementation
+  mode = "single",
+  initialFocus,
 }: CalendarProps) {
+  // Use the selected date or today as the starting month view
+  // We use viewDate to track which month is currently being displayed
+  const [viewDate, setViewDate] = React.useState(selected || new Date())
+
+  // Navigation handlers
+  const handlePrevMonth = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setViewDate(subMonths(viewDate, 1))
+  }
+
+  const handleNextMonth = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setViewDate(addMonths(viewDate, 1))
+  }
+
+  // Calculate the dates to display in the grid
+  const monthStart = startOfMonth(viewDate)
+  const monthEnd = endOfMonth(monthStart)
+  
+  // Start the week on Monday (1)
+  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+
+  const calendarDays = eachDayOfInterval({
+    start: startDate,
+    end: endDate,
+  })
+
+  const weekDayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+
   return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
-      weekStartsOn={1}
-      locale={enGB}
-      className={cn("p-3", className)}
-      classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-between pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        nav: "flex items-center",
-        nav_button: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100 text-primary"
-        ),
-        nav_button_previous: "mr-2",
-        nav_button_next: "ml-2",
-        table: "w-full border-collapse space-y-1",
-        head_row: "grid grid-cols-7 gap-1",
-        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex items-center justify-center",
-        row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-        day: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-        ),
-        day_range_end: "day-range-end",
-        day_selected: "bg-emerald-600 text-emerald-50 hover:bg-emerald-700 focus:bg-emerald-700",
-        day_today: "bg-emerald-100 text-emerald-800",
-        day_range_middle: "bg-emerald-50 text-emerald-800",
-        day_range_start: "day-range-start",
-      }}
-      {...props}
-    />
+    <div 
+      className={cn(
+        "p-4 w-fit bg-background border border-border rounded-xl shadow-md select-none", 
+        className
+      )}
+    >
+      {/* Header with Month/Year and Navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-foreground px-2">
+          {format(viewDate, "MMMM yyyy")}
+        </h2>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={handlePrevMonth}
+            aria-label="Previous Month"
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              "h-8 w-8 p-0 text-muted-foreground hover:text-foreground transition-all rounded-lg"
+            )}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            aria-label="Next Month"
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              "h-8 w-8 p-0 text-muted-foreground hover:text-foreground transition-all rounded-lg"
+            )}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Week Day Labels (Mon, Tue, etc.) */}
+      <div className="grid grid-cols-7 mb-1">
+        {weekDayLabels.map((day) => (
+          <div
+            key={day}
+            className="h-9 w-9 flex items-center justify-center text-[0.7rem] font-medium text-muted-foreground/60 uppercase tracking-tight"
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar Grid of Days */}
+      <div className="grid grid-cols-7 gap-1">
+        {calendarDays.map((day) => {
+          const isSelected = selected && isSameDay(day, selected)
+          const isCurrentMonth = isSameMonth(day, monthStart)
+          const isTodayDate = isToday(day)
+
+          // If showOutsideDays is false, we render empty slots for days not in the current month
+          if (!showOutsideDays && !isCurrentMonth) {
+            return <div key={day.toString()} className="h-9 w-9" />
+          }
+
+          return (
+            <button
+              key={day.toString()}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onSelect?.(day)
+              }}
+              className={cn(
+                "h-9 w-9 flex items-center justify-center rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 relative",
+                isSelected 
+                  ? "bg-emerald-600 text-white font-medium shadow-sm hover:bg-emerald-700" 
+                  : isTodayDate
+                    ? "text-emerald-500 font-bold bg-emerald-500/10 hover:bg-emerald-500/20"
+                    : isCurrentMonth
+                      ? "text-foreground hover:bg-muted"
+                      : "text-muted-foreground/30 hover:bg-muted/50"
+              )}
+            >
+              {format(day, "d")}
+              {/* Subtle indicator for today if not selected */}
+              {isTodayDate && !isSelected && (
+                <span className="absolute bottom-1 w-1 h-1 rounded-full bg-emerald-500" />
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
-Calendar.displayName = "Calendar"
 
-export { Calendar }
+Calendar.displayName = "Calendar"
